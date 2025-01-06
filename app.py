@@ -1,6 +1,6 @@
 import streamlit as st
 from github import Github
-from controlflow import Flow, tool
+from controlflow import Flow
 import controlflow as cf
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
@@ -10,6 +10,7 @@ from typing import Dict, Any
 load_dotenv()
 
 GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
+GITHUB_TOKEN = os.environ['GITHUB_TOKEN']
 
 cf.defaults.model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-002", temperature=0.2)
 
@@ -17,13 +18,12 @@ cf.defaults.model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-002", tempera
 st.title("GitHub Repository Code Assistant")
 
 # Input fields for GitHub token and repository details
-github_token = st.text_input("Enter your GitHub Token", type="password")
+github_token = st.text_input("Enter your GitHub Token", type="password", value=GITHUB_TOKEN)
 repo_name = st.text_input("Enter the Repository Name (e.g., user/repo_name)")
 user_question = st.text_area("What question do you have about the code in this repository?")
 
-# Define the GitHub repository fetching tool using the @tool decorator
-@tool("github_repo_fetcher")
-def fetch_github_repo(context: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+# Define the GitHub repository fetching function
+def fetch_github_repo():
     """Fetches all code content from a GitHub repository"""
     try:
         g = Github(github_token)
@@ -48,10 +48,13 @@ if st.button("Analyze Repository"):
         # Create the flow
         flow = Flow()
 
+        # Register the function as a tool
+        flow.register_function(fetch_github_repo, name="github_repo_fetcher")
+
         # Define the analysis steps
         @flow.task
         async def fetch_repo(context):
-            result = await context.run_tool("github_repo_fetcher", {})
+            result = await context.run_tool("github_repo_fetcher")
             return result["repo_content"]
 
         @flow.task
