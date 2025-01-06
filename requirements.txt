@@ -1,6 +1,7 @@
 streamlit>=1.10.0
 <<<<<<< HEAD
 PyGithub
+vertex-ai-controlflow
 =======
 PyGithub>=1.55
 controlflow>=0.1.0
