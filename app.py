@@ -53,20 +53,32 @@ async def analyze_repo_task(github_token: str, repo_name: str, user_question: st
     
     repo_content = fetch_result["repo_content"]
 
-    # Create a flow to analyze the codebase
-    code_analysis = Flow(
-        role="You are an expert software engineer. Analyze the provided codebase and answer questions about it.",
-        task=f"Based on this codebase, answer the user's question: {user_question}"
-    )
-    
-    # Execute the flow with the repository content
-    result = code_analysis.run(inputs={"codebase": repo_content})
+    code_analysis = create_code_analysis_flow(user_question, repo_content)
+    result = code_analysis.run()
 
     return {
         "question": user_question,
         "repo_files": list(repo_content.keys()),
         "answer": result
     }
+
+# Create a flow to analyze the codebase
+def create_code_analysis_flow(user_question: str, repo_content: str) -> Flow:
+    """
+    Create a Flow object to analyze the codebase.
+    """
+    analysis_logic = {
+        "role": "You are an expert software engineer.",
+        "task": f"Based on this codebase, answer the user's question: {user_question}",
+    }
+
+    # Create the flow object with valid attributes
+    return Flow(
+        name="code_analysis",
+        description="Analyze the provided codebase and answer questions.",
+        inputs={"codebase": repo_content, "analysis_logic": analysis_logic},
+    )
+
 
 def display_results(result: Dict[str, Any]):
     """Displays the results of the analysis in Streamlit."""
