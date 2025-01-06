@@ -1,12 +1,12 @@
 import streamlit as st
 from github import Github
 from controlflow import Flow
-from controlflow.tools import Tool, ToolInput, ToolOutput
+from controlflow.tools import Tool
 import controlflow as cf
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 from dotenv import load_dotenv
-from typing import Dict
+from typing import Dict, Any
 
 load_dotenv()
 
@@ -26,15 +26,8 @@ user_question = st.text_area("What question do you have about the code in this r
 class GitHubRepoFetcher(Tool):
     name = "github_repo_fetcher"
     description = "Fetches all code content from a GitHub repository"
-    inputs = {}
-    outputs = {
-        "repo_content": ToolOutput(
-            description="Dictionary with file paths as keys and file contents as values",
-            type=Dict[str, str]
-        )
-    }
-
-    def execute(self, inputs):
+    
+    def execute(self, inputs: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
         try:
             g = Github(github_token)
             repo = g.get_repo(repo_name)
