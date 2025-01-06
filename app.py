@@ -1,7 +1,6 @@
 import streamlit as st
 from github import Github
-from controlflow import Flow
-from controlflow.tools import Tool
+from controlflow import Flow, tool
 import controlflow as cf
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
@@ -22,26 +21,24 @@ github_token = st.text_input("Enter your GitHub Token", type="password")
 repo_name = st.text_input("Enter the Repository Name (e.g., user/repo_name)")
 user_question = st.text_area("What question do you have about the code in this repository?")
 
-# Define the GitHub repository fetching tool
-class GitHubRepoFetcher(Tool):
-    name = "github_repo_fetcher"
-    description = "Fetches all code content from a GitHub repository"
-    
-    def execute(self, inputs: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
-        try:
-            g = Github(github_token)
-            repo = g.get_repo(repo_name)
-            tree = repo.get_git_tree(sha="main", recursive=True).tree  # Fetch all files recursively
-            
-            repo_content = {}
-            for item in tree:
-                if item.type == "blob":  # Only fetch files (not directories)
-                    file_content = repo.get_contents(item.path).decoded_content.decode("utf-8")
-                    repo_content[item.path] = file_content
-            
-            return {"repo_content": repo_content}
-        except Exception as e:
-            return {"repo_content": f"Error fetching repository: {e}"}
+# Define the GitHub repository fetching tool using the @tool decorator
+@tool("github_repo_fetcher")
+def fetch_github_repo(context: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """Fetches all code content from a GitHub repository"""
+    try:
+        g = Github(github_token)
+        repo = g.get_repo(repo_name)
+        tree = repo.get_git_tree(sha="main", recursive=True).tree  # Fetch all files recursively
+        
+        repo_content = {}
+        for item in tree:
+            if item.type == "blob":  # Only fetch files (not directories)
+                file_content = repo.get_contents(item.path).decoded_content.decode("utf-8")
+                repo_content[item.path] = file_content
+        
+        return {"repo_content": repo_content}
+    except Exception as e:
+        return {"repo_content": f"Error fetching repository: {e}"}
 
 # Button to trigger analysis
 if st.button("Analyze Repository"):
@@ -50,9 +47,6 @@ if st.button("Analyze Repository"):
     else:
         # Create the flow
         flow = Flow()
-        
-        # Register the GitHub repository fetching tool
-        flow.register_tool(GitHubRepoFetcher())
 
         # Define the analysis steps
         @flow.task
