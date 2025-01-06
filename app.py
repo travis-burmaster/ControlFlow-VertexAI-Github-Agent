@@ -23,11 +23,11 @@ github_token = st.text_input("Enter your GitHub Token", type="password", value=G
 repo_name = st.text_input("Enter the Repository Name (e.g., user/repo_name)")
 user_question = st.text_area("What question do you have about the code in this repository?")
 
-# Define the GitHub repository fetching function
 def fetch_repo_content(inputs: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     try:
         g = Github(github_token)
         repo = g.get_repo(repo_name)
+        tree = repo.get_git_tree(sha="main", recursive=True).tree
         
         repo_content = {}
         for item in tree:
