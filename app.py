@@ -1,6 +1,5 @@
 import streamlit as st
 from github import Github
-from vertexai import controlflow as cf
 from controlflow import Flow
 from controlflow.tools import Tool, ToolInput, ToolOutput
 
