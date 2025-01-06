@@ -1,3 +1,4 @@
 streamlit>=1.10.0
 PyGithub>=1.55
-vertex-ai-controlflow>=0.1.0
+controlflow>=0.1.0
+google-cloud-aiplatform>=1.25.0
