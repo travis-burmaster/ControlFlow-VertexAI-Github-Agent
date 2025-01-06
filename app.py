@@ -4,7 +4,7 @@ from typing import Dict, Any
 import streamlit as st
 from github import Github
 from dotenv import load_dotenv
-from controlflow import Flow, Task
+from controlflow import Flow
 import controlflow as cf
 from controlflow.tools import Tool
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -44,7 +44,7 @@ def fetch_repo_content(github_token: str, repo_name: str) -> Dict[str, Any]:
     except Exception as e:
         return {"error": f"Error fetching repository: {e}"}
 
-async def analyze_repo_task(context, github_token: str, repo_name: str, user_question: str) -> Dict[str, Any]:
+async def analyze_repo_task(github_token: str, repo_name: str, user_question: str) -> Dict[str, Any]:
     """Task to analyze a repository and answer a user's question."""
     # Fetch repository content
     fetch_result = fetch_repo_content(github_token, repo_name)
@@ -53,12 +53,14 @@ async def analyze_repo_task(context, github_token: str, repo_name: str, user_que
     
     repo_content = fetch_result["repo_content"]
 
-    # Analyze with agent
-    result = await context.run_agent(
+    # Create a flow to analyze the codebase
+    code_analysis = Flow(
         role="You are an expert software engineer. Analyze the provided codebase and answer questions about it.",
-        task=f"Based on this codebase, answer the user's question: {user_question}",
-        inputs={"codebase": repo_content}
+        task=f"Based on this codebase, answer the user's question: {user_question}"
     )
+    
+    # Execute the flow with the repository content
+    result = code_analysis.run(inputs={"codebase": repo_content})
 
     return {
         "question": user_question,
@@ -83,17 +85,11 @@ if st.button("Analyze Repository"):
     if not github_token or not repo_name or not user_question:
         st.error("Please fill in all fields.")
     else:
-        # Create the flow and define the analysis task
-        flow = Flow()
-        
-        analyze_repo = cf.Task(
-            name="Analyze Repository",
-            func=lambda context: analyze_repo_task(context, github_token, repo_name, user_question)
-        )
-
         try:
-            # Run the flow with the defined task
-            result = flow.run(analyze_repo)
+            # Streamlit does not natively support `await` in its synchronous context.
+            # Use asyncio.run() to handle async functions.
+            import asyncio
+            result = asyncio.run(analyze_repo_task(github_token, repo_name, user_question))
             display_results(result)
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
